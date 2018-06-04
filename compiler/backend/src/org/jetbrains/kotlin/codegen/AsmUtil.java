@@ -90,12 +90,13 @@ public class AsmUtil {
             .put(JavaVisibilities.PACKAGE_VISIBILITY, NO_FLAG_PACKAGE_PRIVATE)
             .build();
 
+    public static final String CAPTURED_THIS_FIELD = "$this";
+
     // 'kotlin.jvm.internal.CallableReference' has a 'receiver' field
     public static final String BOUND_REFERENCE_RECEIVER = "receiver";
 
     public static final String RECEIVER_NAME = "$receiver";
     public static final String CAPTURED_RECEIVER_FIELD = "receiver$0";
-    public static final String CAPTURED_THIS_FIELD = "$this";
 
     private static final ImmutableMap<Integer, JvmPrimitiveType> primitiveTypeByAsmSort;
     private static final ImmutableMap<Type, Type> primitiveTypeByBoxedType;

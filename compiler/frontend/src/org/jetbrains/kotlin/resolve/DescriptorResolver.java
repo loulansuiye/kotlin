@@ -1069,15 +1069,17 @@ public class DescriptorResolver {
             trace.record(BindingContext.PROPERTY_ACCESSOR, setter, setterDescriptor);
         }
         else if (property.isVar()) {
-            Annotations setterAnnotations = annotationSplitter.getAnnotationsForTarget(PROPERTY_SETTER);
-            setterDescriptor = DescriptorFactory.createSetter(propertyDescriptor, setterAnnotations, !hasDelegate,
-                                                              /* isExternal = */ false, property.hasModifier(KtTokens.INLINE_KEYWORD),
-                                                              propertyDescriptor.getSource());
+            setterDescriptor = DescriptorFactory.createSetter(
+                    propertyDescriptor,
+                    annotationSplitter.getAnnotationsForTarget(PROPERTY_SETTER),
+                    annotationSplitter.getAnnotationsForTarget(SETTER_PARAMETER),
+                    !hasDelegate, false, property.hasModifier(KtTokens.INLINE_KEYWORD),
+                    propertyDescriptor.getSource()
+            );
         }
 
         if (!property.isVar()) {
             if (setter != null) {
-                //                trace.getErrorHandler().genericError(setter.asElement().getNode(), "A 'val'-property cannot have a setter");
                 trace.report(VAL_WITH_SETTER.on(setter));
             }
         }
@@ -1228,7 +1230,9 @@ public class DescriptorResolver {
 
         PropertyGetterDescriptorImpl getter = DescriptorFactory.createDefaultGetter(propertyDescriptor, getterAnnotations);
         PropertySetterDescriptor setter =
-                propertyDescriptor.isVar() ? DescriptorFactory.createDefaultSetter(propertyDescriptor, setterAnnotations) : null;
+                propertyDescriptor.isVar()
+                ? DescriptorFactory.createDefaultSetter(propertyDescriptor, setterAnnotations, Annotations.Companion.getEMPTY())
+                : null;
 
         propertyDescriptor.initialize(getter, setter);
         getter.initialize(propertyDescriptor.getType());

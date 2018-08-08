@@ -39,9 +39,9 @@ import org.jetbrains.kotlin.diagnostics.PsiDiagnosticUtils
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.psi.psiUtil.isContractPresentPsiCheck
 import org.jetbrains.kotlin.psi.psiUtil.hasActualModifier
 import org.jetbrains.kotlin.psi.psiUtil.hasExpectModifier
+import org.jetbrains.kotlin.psi.psiUtil.isContractPresentPsiCheck
 import org.jetbrains.kotlin.resolve.DescriptorResolver.getDefaultModality
 import org.jetbrains.kotlin.resolve.DescriptorResolver.getDefaultVisibility
 import org.jetbrains.kotlin.resolve.DescriptorUtils.getDispatchReceiverParameterIfNeeded
@@ -201,7 +201,9 @@ class FunctionDescriptorResolver(
         val contractProvider = getContractProvider(functionDescriptor, trace, scope, dataFlowInfo, function)
 
         functionDescriptor.initialize(
-            receiverType,
+            receiverType?.let {
+                DescriptorFactory.createExtensionReceiverParameterForCallable(functionDescriptor, it, Annotations.EMPTY)
+            },
             getDispatchReceiverParameterIfNeeded(container),
             typeParameterDescriptors,
             valueParameterDescriptors,

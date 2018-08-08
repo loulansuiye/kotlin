@@ -36,7 +36,10 @@ import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.*
-import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.IrBlock
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrFunctionReference
 import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrDelegatingConstructorCallImpl
@@ -465,7 +468,7 @@ class CallableReferenceLowering(val context: JvmBackendContext) : FileLoweringPa
                                 /* outType                   = */ superNameProperty.type,
                                 /* typeParameters            = */ superNameProperty.typeParameters,
                                 /* dispatchReceiverParameter = */ superNameProperty.dispatchReceiverParameter,
-                                /* receiverType              = */ superNameProperty.extensionReceiverParameter?.type
+                                /* extensionReceiverParameter= */ superNameProperty.extensionReceiverParameter
                             )
                             //overriddenDescriptors += superNameProperty.getter
                         }

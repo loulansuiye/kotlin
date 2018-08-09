@@ -18,14 +18,18 @@ package org.jetbrains.kotlin.idea.vfilefinder
 
 import com.intellij.ide.highlighter.JavaClassFileType
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.vfs.VirtualFileWithId
+import com.intellij.psi.search.EverythingGlobalScope
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.indexing.*
+import com.intellij.util.io.BooleanDataDescriptor
 import com.intellij.util.io.IOUtil
 import com.intellij.util.io.KeyDescriptor
 import org.jetbrains.kotlin.idea.caches.IDEKotlinBinaryClassCache
 import org.jetbrains.kotlin.idea.decompiler.builtIns.BuiltInDefinitionFile
 import org.jetbrains.kotlin.idea.decompiler.builtIns.KotlinBuiltInFileType
 import org.jetbrains.kotlin.idea.decompiler.js.KotlinJavaScriptMetaFileType
+import org.jetbrains.kotlin.load.kotlin.FileBasedKotlinClass
 import org.jetbrains.kotlin.metadata.js.JsProtoBuf
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -144,3 +148,29 @@ object KotlinMetadataFileIndex : KotlinMetadataFileIndexBase<KotlinMetadataFileI
 
 object KotlinMetadataFilePackageIndex : KotlinMetadataFileIndexBase<KotlinMetadataFilePackageIndex>(
         KotlinMetadataFilePackageIndex::class.java, ClassId::getPackageFqName)
+
+object KotlinJvmClassHeaderPresenceIndex : SingleEntryFileBasedIndexExtension<Boolean>() {
+    val KEY: ID<Int, Boolean> = ID.create("org.jetbrains.kotlin.idea.vfilefinder.KotlinJvmClassHeaderPresenceIndex")
+
+    override fun getName() = KEY
+    override fun getVersion() = 1
+
+    override fun getInputFilter() = FileBasedIndex.InputFilter { file -> file.fileType == JavaClassFileType.INSTANCE }
+    override fun getValueExternalizer(): BooleanDataDescriptor = BooleanDataDescriptor.INSTANCE
+
+    override fun getIndexer(): SingleEntryIndexer<Boolean> =
+        object : SingleEntryIndexer<Boolean>(false) {
+            override fun computeValue(inputData: FileContent): Boolean =
+                FileBasedKotlinClass.create(inputData.content) { _, _, _, _ ->
+                    true
+                } ?: false
+        }
+
+    fun isKotlinJvmCompiledFile(virtualFile: VirtualFileWithId): Boolean =
+        !FileBasedIndex.getInstance().processValues(
+            name, virtualFile.id,
+            null,
+            { _, _ -> false },
+            EverythingGlobalScope()
+        )
+}

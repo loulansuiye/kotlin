@@ -85,7 +85,7 @@ public abstract class FileBasedKotlinClass implements KotlinJvmBinaryClass {
 
     // TODO public to be accessible in companion object of subclass, workaround for KT-3974
     @Nullable
-    public static <T extends FileBasedKotlinClass> T create(
+    public static <T> T create(
             @NotNull byte[] fileContents,
             @NotNull Function4<ClassId, Integer, KotlinClassHeader, InnerClassesInfo, T> factory
     ) {
@@ -278,7 +278,7 @@ public abstract class FileBasedKotlinClass implements KotlinJvmBinaryClass {
 
         List<String> classes = new ArrayList<>(1);
         boolean local = false;
-        
+
         while (true) {
             OuterAndInnerName outer = innerClasses.get(name);
             if (outer == null) break;

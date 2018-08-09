@@ -22,6 +22,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWithId
 import com.intellij.reference.SoftReference
+import org.jetbrains.kotlin.idea.vfilefinder.KotlinJvmClassHeaderPresenceIndex
 import org.jetbrains.kotlin.load.kotlin.KotlinBinaryClassCache
 import org.jetbrains.kotlin.load.kotlin.KotlinJvmBinaryClass
 import org.jetbrains.kotlin.load.kotlin.header.KotlinClassHeader
@@ -47,10 +48,10 @@ object IDEKotlinBinaryClassCache {
             return false
         }
 
-        val cached = getKotlinBinaryFromCache(file)
-        if (cached != null) {
-            return cached.isKotlinBinary
+        if (file is VirtualFileWithId) {
+            return KotlinJvmClassHeaderPresenceIndex.isKotlinJvmCompiledFile(file)
         }
+
         return getKotlinBinaryClass(file, fileContent) != null
     }
 

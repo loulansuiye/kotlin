@@ -106,3 +106,12 @@ public actual fun String.compareTo(other: String, ignoreCase: Boolean = false): 
         return compareTo(other)
     }
 }
+
+
+private var STRING_CASE_INSENSITIVE_ORDER: Comparator<String>? = null
+
+@SinceKotlin("1.2")
+public actual val String.Companion.CASE_INSENSITIVE_ORDER: Comparator<String>
+    get() =
+        STRING_CASE_INSENSITIVE_ORDER
+            ?: Comparator<String> { a, b -> a.compareTo(b, ignoreCase = true) }.also { STRING_CASE_INSENSITIVE_ORDER = it }

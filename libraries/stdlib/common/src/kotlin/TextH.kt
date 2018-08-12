@@ -293,6 +293,7 @@ expect fun Long.toString(radix: Int): String
 /**
  * Compares two strings lexicographically, optionally ignoring case differences.
  */
+@SinceKotlin("1.2")
 expect fun String.compareTo(other: String, ignoreCase: Boolean = false): Int
 
 @PublishedApi

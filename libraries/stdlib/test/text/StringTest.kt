@@ -1337,7 +1337,7 @@ ${"    "}
         assertEquals("  ", "".prependIndent("  "))
     }
 
-    @Test fun testCompareToIgnoreCase() {
+    @Test fun compareToIgnoreCase() {
         assertTrue("ABC".compareTo("ABC", ignoreCase = false) == 0)
         assertTrue("ABC".compareTo("ABc", ignoreCase = false) < 0)
         assertTrue("ABc".compareTo("ABC", ignoreCase = false) > 0)

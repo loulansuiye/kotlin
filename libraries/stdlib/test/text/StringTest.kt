@@ -790,6 +790,7 @@ class StringTest {
         run {
             val a32 = "A".repeat(32)
             assertCompareResult(LT, EQ, a32 + "B", a32 + "b")
+            assertCompareResult(LT, GT, a32 + "BB", a32 + "b")
             assertCompareResult(LT, GT, a32 + "C", a32 + "b")
 
         }

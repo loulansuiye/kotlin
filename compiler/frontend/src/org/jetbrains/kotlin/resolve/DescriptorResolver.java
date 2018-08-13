@@ -296,7 +296,8 @@ public class DescriptorResolver {
             @NotNull KtParameter valueParameter,
             int index,
             @NotNull KotlinType type,
-            @NotNull BindingTrace trace
+            @NotNull BindingTrace trace,
+            @NotNull Annotations additionalAnnotations
     ) {
         KotlinType varargElementType = null;
         KotlinType variableType = type;
@@ -305,22 +306,7 @@ public class DescriptorResolver {
             variableType = getVarargParameterType(type);
         }
 
-        KtModifierList modifierList = valueParameter.getModifierList();
-
-        Annotations allAnnotations =
-                annotationResolver.resolveAnnotationsWithoutArguments(scope, valueParameter.getModifierList(), trace);
-        Annotations valueParameterAnnotations = Annotations.Companion.getEMPTY();
-
-        if (modifierList != null) {
-            if (valueParameter.hasValOrVar()) {
-                AnnotationSplitter annotationSplitter = AnnotationSplitter.create(
-                        storageManager, allAnnotations, SetsKt.setOf(CONSTRUCTOR_PARAMETER));
-                valueParameterAnnotations = annotationSplitter.getAnnotationsForTarget(CONSTRUCTOR_PARAMETER);
-            }
-            else {
-                valueParameterAnnotations = allAnnotations;
-            }
-        }
+        Annotations valueParameterAnnotations = resolveValueParameterAnnotations(scope, valueParameter, trace, additionalAnnotations);
 
         KtDestructuringDeclaration destructuringDeclaration = valueParameter.getDestructuringDeclaration();
 
@@ -387,6 +373,27 @@ public class DescriptorResolver {
 
         trace.record(BindingContext.VALUE_PARAMETER, valueParameter, valueParameterDescriptor);
         return valueParameterDescriptor;
+    }
+
+    @NotNull
+    private Annotations resolveValueParameterAnnotations(
+            @NotNull LexicalScope scope,
+            @NotNull KtParameter parameter,
+            @NotNull BindingTrace trace,
+            @NotNull Annotations additionalAnnotations
+    ) {
+        KtModifierList modifierList = parameter.getModifierList();
+        if (modifierList == null) {
+            return additionalAnnotations;
+        }
+
+        Annotations allAnnotations = annotationResolver.resolveAnnotationsWithoutArguments(scope, modifierList, trace);
+        if (!parameter.hasValOrVar()) {
+            return new CompositeAnnotations(allAnnotations, additionalAnnotations);
+        }
+
+        AnnotationSplitter splitter = AnnotationSplitter.create(storageManager, allAnnotations, SetsKt.setOf(CONSTRUCTOR_PARAMETER));
+        return new CompositeAnnotations(splitter.getAnnotationsForTarget(CONSTRUCTOR_PARAMETER), additionalAnnotations);
     }
 
     @NotNull
@@ -866,8 +873,9 @@ public class DescriptorResolver {
                                        () -> AnnotationSplitter.getTargetSet(false, trace.getBindingContext(), wrapper));
 
         Annotations propertyAnnotations = new CompositeAnnotations(CollectionsKt.listOf(
-                annotationSplitter.getAnnotationsForTargets(PROPERTY, FIELD, PROPERTY_DELEGATE_FIELD),
-                annotationSplitter.getOtherAnnotations()));
+                annotationSplitter.getAnnotationsForTarget(PROPERTY),
+                annotationSplitter.getOtherAnnotations())
+        );
 
         PropertyDescriptorImpl propertyDescriptor = PropertyDescriptorImpl.create(
                 container,
@@ -974,7 +982,11 @@ public class DescriptorResolver {
                 propertyInfo.getPropertySetter(),
                 propertyInfo.getHasDelegate());
 
-        propertyDescriptor.initialize(getter, setter);
+        propertyDescriptor.initialize(
+                getter, setter,
+                new FieldDescriptorImpl(annotationSplitter.getAnnotationsForTarget(FIELD), propertyDescriptor),
+                new FieldDescriptorImpl(annotationSplitter.getAnnotationsForTarget(PROPERTY_DELEGATE_FIELD), propertyDescriptor)
+        );
 
         trace.record(BindingContext.VARIABLE, variableDeclaration, propertyDescriptor);
         return propertyDescriptor;
@@ -1059,8 +1071,10 @@ public class DescriptorResolver {
                     }
                 }
 
-                ValueParameterDescriptorImpl valueParameterDescriptor =
-                        resolveValueParameterDescriptor(scopeWithTypeParameters, setterDescriptor, parameter, 0, type, trace);
+                ValueParameterDescriptorImpl valueParameterDescriptor = resolveValueParameterDescriptor(
+                        scopeWithTypeParameters, setterDescriptor, parameter, 0, type, trace,
+                        annotationSplitter.getAnnotationsForTarget(SETTER_PARAMETER)
+                );
                 setterDescriptor.initialize(valueParameterDescriptor);
             }
             else {
@@ -1203,8 +1217,9 @@ public class DescriptorResolver {
                                        () -> AnnotationSplitter.getTargetSet(true, trace.getBindingContext(), propertyWrapper));
 
         Annotations propertyAnnotations = new CompositeAnnotations(
-                annotationSplitter.getAnnotationsForTargets(PROPERTY, FIELD),
-                annotationSplitter.getOtherAnnotations());
+                annotationSplitter.getAnnotationsForTarget(PROPERTY),
+                annotationSplitter.getOtherAnnotations()
+        );
 
         PropertyDescriptorImpl propertyDescriptor = PropertyDescriptorImpl.create(
                 classDescriptor,
@@ -1235,7 +1250,12 @@ public class DescriptorResolver {
                 ? DescriptorFactory.createDefaultSetter(propertyDescriptor, setterAnnotations, Annotations.Companion.getEMPTY())
                 : null;
 
-        propertyDescriptor.initialize(getter, setter);
+        propertyDescriptor.initialize(
+                getter, setter,
+                new FieldDescriptorImpl(annotationSplitter.getAnnotationsForTarget(FIELD), propertyDescriptor),
+                null
+        );
+
         getter.initialize(propertyDescriptor.getType());
 
         trace.record(BindingContext.PRIMARY_CONSTRUCTOR_PARAMETER, parameter, propertyDescriptor);
